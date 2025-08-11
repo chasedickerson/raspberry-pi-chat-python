@@ -39,7 +39,3 @@ def get_uploaded_file(filename):
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
 
-
-# http://192.168.0.178:5001/
-
-#            String filePath = uploadDir.getAbsolutePath() + File.separator + file.getOriginalFilename();
