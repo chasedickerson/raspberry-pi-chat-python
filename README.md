@@ -38,9 +38,6 @@ Raspberry PI -
 <img width="320" height="240" alt="image" src="https://github.com/user-attachments/assets/84bee11b-b763-4062-a771-f5fc20c59552" />
 
 You can upload files and send screenshots as well using the Upload File feature 
-(Note: create an uploads folder in the root directory for this to work as it isn't tracked by git)
-
-<img width="924" height="1010" alt="image" src="https://github.com/user-attachments/assets/42a8f8f0-5178-442f-8f1a-8721504209ce" />
 
 
 Mac -
