@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            max-height: 500px;
+        }
+
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #555;
+            word-wrap: break-word;
+        }
+
+        .message img {
+            max-width: 100px;
+            border-radius: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area textarea {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #555;
+            color: white;
+            border: 1px solid #666;
+            font-size: 16px;
+        }
+
+        .input-area button {
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .input-area button:hover {
+            background-color: #4682b4;
+        }
+
+        .upload-area {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .upload-area input {
+            padding: 10px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-area label {
+            cursor: pointer;
+        }
+
+        pre {
+            background-color: #222;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        code {
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <h1>Raspberry Pi Chat</h1>
+
+        <div class="messages" id="messages">
+            <!-- Messages will be appended here -->
+        </div>
+
+        <div class="input-area">
+            <textarea id="message-input" placeholder="Type a message..." rows="2"></textarea>
+            <button id="send-btn">Send</button>
+        </div>
+
+        <div class="upload-area">
+            <label for="file-upload">Upload File</label>
+            <input type="file" id="file-upload" />
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        let i = 0;
+        const socket = io.connect();
+
+        // Handle incoming messages from other users
+        socket.on('message', function(msg) {
+            appendMessage(msg);
+        });
+
+        // Send text message
+        document.getElementById('send-btn').onclick = function() {
+            const message = document.getElementById('message-input').value;
+            if (message) {
+                socket.send(message);  // Send the message via socket only
+                document.getElementById('message-input').value = '';  // Clear the input field
+                scrollToBottom();  // Scroll to the latest message
+            }
+        };
+
+        // Allow sending message on Enter key press
+        document.getElementById('message-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('send-btn').click();
+            }
+        });
+
+        // Upload file
+        document.getElementById('file-upload').onchange = function(event) {
+            const formData = new FormData();
+            formData.append('file', event.target.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    const filename = i + event.target.files[0].name; // Get the actual file name
+                    const fileMessage = `<a href="${data.url}" target="_blank">${filename}</a>`;
+                    // Only send once to the server and append it to the messages
+                    socket.send(fileMessage);
+                    //appendMessage(fileMessage);
+                    scrollToBottom();
+                    i++;
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+            });
+        };
+
+        // Append messages to the chat window
+        function appendMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+
+            // Escape HTML special characters to prevent rendering
+            // messageElement.textContent = message;  // Use textContent to escape HTML
+
+            // Process markdown: look for code blocks and format them
+            messageElement.innerHTML = processMarkdown(message);
+            document.getElementById('messages').appendChild(messageElement);
+        }
+
+        // Function to process markdown, specifically for code blocks
+        function processMarkdown(message) {
+            // Replace ```code block``` with formatted <pre> tag
+            message = message.replace(/```(.*?)```/gs, function(match, p1) {
+                return `<pre><code>${p1.trim()}</code></pre>`;
+            });
+            return message;
+        }
+
+        // Scroll to the bottom of the chat window
+        function scrollToBottom() {
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+
+</body>
+</html>
