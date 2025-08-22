@@ -2,7 +2,9 @@
 
 Python version of - https://github.com/chasedickerson/raspberry-pi-chat-java
 
+
 A simple Python-based chat application designed for Raspberry Pi, enabling real-time messaging over a local network. This project demonstrates core networking concepts in Python and is ideal for learning, tinkering, or building lightweight chat systems on Raspberry Pi devices.
+
 
 ## Context
 
